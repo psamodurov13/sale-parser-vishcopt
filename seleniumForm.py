@@ -31,9 +31,12 @@ def get_posts(url):
 
 # Подключаем вэб-драйвер Chrome
 options = Options()
+options.add_argument('headless')
+options.add_argument('--no-sandbox')
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
                      '(KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36')
+
 
 
 # Запускаем парсинг
@@ -60,7 +63,7 @@ def start_parse():
 
         yml_url = 'https://vishcopt.ru/export/yml/'
         yml = s.get(yml_url, cookies=get_cookies())
-        with open('/Users/psamodurov13/Downloads/catalog.yml', 'wb') as file:
+        with open('/home/user/web/sweethomedress.ru/public_html/catalog.yml', 'wb') as file:
             file.write(yml.content)
 
         # Собираем список товаров, пробегаемся по двум разделам распродажи
