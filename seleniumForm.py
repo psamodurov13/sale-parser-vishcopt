@@ -12,7 +12,7 @@ from rich.progress import track
 import add_sales
 
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
 }
 
 def get_cookies():
@@ -57,6 +57,11 @@ def start_parse():
         button = driver.find_element(By.CSS_SELECTOR, 'div.api-auth form button[type="submit"]')
         button.click()
         time.sleep(5)
+
+        yml_url = 'https://vishcopt.ru/export/yml/'
+        yml = s.get(yml_url, cookies=get_cookies())
+        with open('/Users/psamodurov13/Downloads/catalog.yml', 'wb') as file:
+            file.write(yml.content)
 
         # Собираем список товаров, пробегаемся по двум разделам распродажи
         products = set()
