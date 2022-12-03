@@ -11,9 +11,11 @@ from bs4 import BeautifulSoup as bs
 from rich.progress import track
 import add_sales
 
+
 headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
 }
+
 
 def get_cookies():
     cookies = {}
@@ -29,7 +31,7 @@ def get_posts(url):
     return response.text
 
 
-# Подключаем вэб-драйвер Chrome
+# Connect webdriver Chrome
 options = Options()
 options.add_argument('headless')
 options.add_argument('--no-sandbox')
@@ -38,8 +40,7 @@ options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
                      '(KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36')
 
 
-
-# Запускаем парсинг
+# Start parsing
 def start_parse():
     driver.get('https://vishcopt.ru/')
     time.sleep(1)
@@ -48,7 +49,7 @@ def start_parse():
     s.cookies.set(domain=cookies['domain'], name=cookies['name'], path=cookies['path'], value=cookies['value'])
 
     try:
-        # Входим в личный кабинет
+        # Sign in
         driver.get('https://vishcopt.ru/personal/')
         time.sleep(1)
         username_input = driver.find_element(By.CSS_SELECTOR, 'div.api-auth form input[type="text"]')
@@ -63,10 +64,10 @@ def start_parse():
 
         yml_url = 'https://vishcopt.ru/export/yml/'
         yml = s.get(yml_url, cookies=get_cookies())
-        with open('/home/user/web/sweethomedress.ru/public_html/catalog.yml', 'wb') as file:
+        with open('catalog.yml', 'wb') as file:
             file.write(yml.content)
 
-        # Собираем список товаров, пробегаемся по двум разделам распродажи
+        # get products list, iterate by 2 sales categories
         products = set()
         for i in ['https://vishcopt.ru/catalog/s_a_l_e/', 'https://vishcopt.ru/catalog/super_sale/']:
             driver.get(i)
@@ -74,15 +75,15 @@ def start_parse():
                 html = driver.page_source
                 soup = bs(html, features="html.parser")
                 products.update(list(set(item.get('href') for item in soup.select('#collection .product-item a'))))
-                print('Всего товаров ', len(products))
+                print('Total products ', len(products))
                 if not driver.find_element(By.CSS_SELECTOR, '.pagination-bar ul li:last-child a').text.isdigit():
                     next_page = driver.find_element(By.CSS_SELECTOR, '.pagination-bar ul li:last-child a')
                     next_page.click()
                     time.sleep(1)
                 else:
-                    print('Больше страниц с товарами нет')
+                    print('No more product pages')
                     break
-        # Собираем данные о каждом товаре (старая цена, новая цена)
+        # Get data about all products (old price, new price)
         products_dict = {}
         for product in track(products):
             prod_html = get_posts('https://vishcopt.ru' + product)
@@ -97,11 +98,11 @@ def start_parse():
                 print(ex)
             print(len(products_dict), ' / ', len(products))
 
-        # Сохраняем данные в json
+        # Save data in json
         with open('products.json', 'w') as prod_file:
             json.dump(products_dict, prod_file, ensure_ascii=False, indent=4)
 
-        # Обновляем цены в файле-выгрузке и создаем xml файл
+        # Update prices in the upload file and create an xml file
         add_sales.convert()
 
     except Exception as ex:
