@@ -1,7 +1,6 @@
 import pandas as pd
 import json
 from rich.progress import track
-from loguru import logger
 
 
 def convert():
@@ -17,18 +16,18 @@ def convert():
      'ProductAttributes',
      'ProductFilters']
 
+
     prods_all = pd.read_excel('products.xlsx', sn)
     prods = prods_all['Products'][['product_id', 'mpn']]
     exceptions = []
     for i in products:
         try:
             products[i].append(prods[prods['mpn'] == i].values[0][0])
-        except Exception as ex:
+        except Exception:
             products[i].append('0')
             exceptions.append(i)
-            logger.exception(ex)
 
-    # Create a DataFrame and set retail prices
+    # Создаем DataFrame и приводим цены к розничным значениям
     data = pd.DataFrame.from_dict(products, orient='index', columns=['price', 'old', 'url', 'product_id'])
     data['price'] = data['price'].apply(lambda x: x.replace(' ', ''))
     data['old'] = data['old'].apply(lambda x: x.replace(' ', ''))
@@ -39,12 +38,12 @@ def convert():
     data.loc[:, 'old'] *= 2
     data.loc[(data.price < 2500), 'price'] = data.price + 200
 
-    # Create XML file
-    with open('/home/user/web/sweethomedress.ru/public_html/data.xml', 'w') as file:
+    # Генерируем XML файл
+    with open('data.xml', 'w') as file:
         file.write(data.to_xml())
-        print('XML - created')
+        print('XML - создан')
 
-    # Set new special price in XLSX file
+    # Указываем новые акционныю цены в XLSX выгрузке
     data_specials = data[['product_id', 'price']]
     data_specials.insert(1, 'customer_group', 'Default')
     data_specials.insert(2, 'priority', '1')
@@ -54,13 +53,9 @@ def convert():
 
     writer = pd.ExcelWriter('./products.xlsx', engine='xlsxwriter')
 
-    for sheet_name in track(prods_all.keys(), description='[red]Loading to file', style='red'):
+    for sheet_name in track(prods_all.keys(), description='[red]Закрузка в файл', style='red'):
         prods_all[sheet_name].to_excel(writer, sheet_name=sheet_name, index=False)
 
     writer.save()
-    print('XLSX - created')
+    print('XLSX - создан')
     print('Exceptions - ', exceptions)
-
-
-if __name__ == '__main__':
-    convert()
