@@ -1,10 +1,11 @@
 import pandas as pd
 import json
 from rich.progress import track
+from constants import *
 
 
 def convert():
-    with open('products.json', 'r') as file:
+    with open(f'{current_path}products.json', 'r') as file:
         products = json.load(file)
     sn = ['Products',
      'AdditionalImages',
@@ -17,7 +18,7 @@ def convert():
      'ProductFilters']
 
 
-    prods_all = pd.read_excel('products.xlsx', sn)
+    prods_all = pd.read_excel(f'{current_path}products.xlsx', sn)
     prods = prods_all['Products'][['product_id', 'mpn']]
     exceptions = []
     for i in products:
@@ -39,7 +40,11 @@ def convert():
     data.loc[(data.price < 2500), 'price'] = data.price + 200
 
     # Генерируем XML файл
-    with open('data.xml', 'w') as file:
+    if prod:
+        path_to_data = '/home/user/web/sweethomedress.ru/public_html/data.xml'
+    else:
+        path_to_data = 'data.xml'
+    with open(path_to_data, 'w') as file:
         file.write(data.to_xml())
         print('XML - создан')
 
@@ -51,7 +56,7 @@ def convert():
     data_specials.insert(5, 'date_end', '2050-01-01')
     prods_all['Specials'] = pd.concat([prods_all['Specials'], data_specials])
 
-    writer = pd.ExcelWriter('./products.xlsx', engine='xlsxwriter')
+    writer = pd.ExcelWriter(f'{current_path}products.xlsx', engine='xlsxwriter')
 
     for sheet_name in track(prods_all.keys(), description='[red]Закрузка в файл', style='red'):
         prods_all[sheet_name].to_excel(writer, sheet_name=sheet_name, index=False)

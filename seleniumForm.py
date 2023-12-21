@@ -17,8 +17,9 @@ from loguru import logger
 from selenium.common.exceptions import NoSuchElementException
 import urllib.request
 import base64
+from constants import *
 
-logger.add('debug.log', format="{time} {level} {message}", level="INFO")
+logger.add(f'{current_path}debug.log', format="{time} {level} {message}", level="INFO")
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
@@ -35,7 +36,7 @@ def get_cookies():
 
 def get_posts(url):
     cookies = get_cookies()
-    response = rq.get(url, cookies=cookies)
+    response = rq.get(url, cookies=cookies, proxies=proxies)
     return response.text
 
 
@@ -153,14 +154,14 @@ def start_parse():
         driver.save_screenshot('screen.png')
 
         yml_url = 'https://vishcopt.ru/export/yml/'
-        yml = s.get(yml_url, cookies=get_cookies())
-        # urllib.request.urlretrieve(yml_url, 'catalog.yml',)
+        yml = s.get(yml_url, cookies=get_cookies(), proxies=proxies)
         logger.info(f'RESPONSE {yml}')
-        # with open('/home/user/web/sweethomedress.ru/public_html/catalog.yml', 'wb') as file:
-        with open('catalog.yml', 'wb') as file:
+        path_to_file = '/home/user/web/sweethomedress.ru/public_html/catalog.yml' if prod else 'catalog.yml'
+        with open(path_to_file, 'wb') as file:
             file.write(yml.content)
             logger.info(f'CREATED FILE')
-
+        # urllib.request.urlretrieve(yml_url, 'catalog.yml',)
+        # logger.info(f'CREATED FILE')
         # get products list, iterate by 2 sales categories
         products = set()
         for i in ['https://vishcopt.ru/catalog/s_a_l_e/', 'https://vishcopt.ru/catalog/super_sale/']:
@@ -212,7 +213,7 @@ def start_parse():
             print(len(products_dict), ' / ', len(products))
 
         # Save data in json
-        with open('products.json', 'w') as prod_file:
+        with open(f'{current_path}products.json', 'w') as prod_file:
             json.dump(products_dict, prod_file, ensure_ascii=False, indent=4)
 
         # Update prices in the upload file and create an xml file
